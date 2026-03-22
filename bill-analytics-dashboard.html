@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accounts Payable · Analytics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#F4F6FA;
+  --surface:#FFFFFF;
+  --surface2:#F8F9FC;
+  --border:#E8ECF4;
+  --text-1:#1A1F36;
+  --text-2:#5A6478;
+  --text-3:#9CA3B8;
+  --purple:#6C5CE7;
+  --purple-l:#EEF0FD;
+  --teal:#00B894;
+  --teal-l:#E0F7F2;
+  --green:#00A878;
+  --green-l:#E0F5EE;
+  --amber:#F59E0B;
+  --amber-l:#FEF3C7;
+  --red:#EF4444;
+  --red-l:#FEE2E2;
+  --blue:#3B82F6;
+  --blue-l:#DBEAFE;
+  --r:10px;
+  --r-sm:7px;
+  --sh:0 1px 3px rgba(0,0,0,0.05),0 4px 12px rgba(0,0,0,0.04);
+  --sh-md:0 2px 8px rgba(0,0,0,0.07),0 8px 24px rgba(0,0,0,0.05);
+}
+
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text-1);font-size:13px;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:48px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2)}
+.breadcrumb span{color:var(--text-3)}/
+.breadcrumb strong{color:var(--text-1);font-weight:600}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+.user-name{font-size:12px;font-weight:600}
+.user-role{font-size:10px;color:var(--text-3)}
+
+/* ── FILTER BAR ── */
+.filterbar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.filter-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:500;color:var(--text-2);cursor:pointer;transition:all .15s}
+.filter-chip:hover{border-color:var(--purple);color:var(--purple)}
+.filter-chip svg{width:10px;height:10px;opacity:.5}
+.filter-chip.active{background:var(--purple-l);border-color:var(--purple);color:var(--purple)}
+.btn-apply{margin-left:auto;padding:6px 18px;border-radius:20px;background:var(--purple);color:#fff;border:none;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-apply:hover{background:#5B4DD6}
+
+/* ── MAIN CONTENT ── */
+.main{padding:20px 24px;max-width:1400px;margin:0 auto}
+
+/* ── SECTION HEADER ── */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;margin-top:24px}
+.sec-hdr:first-child{margin-top:0}
+.sec-title{font-size:13px;font-weight:700;color:var(--text-1)}
+.sec-sub{font-size:11px;color:var(--text-3);margin-top:1px}
+.sec-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.g2x1{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.g1x2{display:grid;grid-template-columns:1fr 2fr;gap:14px}
+
+/* ── STAT ROW (existing style) ── */
+.stat-strip{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.stat-wide{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:14px 18px;display:flex;align-items:center;gap:14px}
+.stat-wide-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stat-wide-lbl{font-size:11px;color:var(--text-2);font-weight:500}
+.stat-wide-val{font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--purple);margin-top:1px}
+
+/* ── KPI CARDS (existing penalty/incentive style) ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh)}
+.kpi-lbl{font-size:10px;color:var(--text-3);font-weight:500;margin-bottom:6px}
+.kpi-val{font-size:18px;font-weight:800;letter-spacing:-0.5px}
+.kpi-delta{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin-top:5px}
+.kpi-delta.up{background:#D1FAE5;color:#059669}
+.kpi-delta.dn{background:var(--red-l);color:var(--red)}
+.kpi-note{font-size:10px;color:var(--text-3);margin-top:2px}
+
+/* ── DELTA TAG ── */
+.delta{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:2px 6px;border-radius:8px}
+.delta.up{background:#D1FAE5;color:#059669}
+.delta.dn{background:var(--red-l);color:var(--red)}
+.delta.warn{background:var(--amber-l);color:#92400E}
+
+/* ── CHART CARD ── */
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
+.chart-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.chart-title{font-size:12px;font-weight:700;color:var(--text-1)}
+.chart-subtitle{font-size:10px;color:var(--text-3);margin-top:2px}
+.chart-kpi{font-size:18px;font-weight:800;letter-spacing:-0.5px}
+.chart-kpi-lbl{font-size:10px;color:var(--text-3);display:flex;align-items:center;gap:6px;margin-top:3px}
+.chart-wrap{position:relative}
+
+/* ── LEGEND ── */
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-2)}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.legend-line{width:16px;height:3px;border-radius:2px;flex-shrink:0}
+
+/* ── BILL VISIBILITY SECTION ── */
+.funnel-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.funnel-row:last-child{border-bottom:none}
+.funnel-lbl{font-size:12px;color:var(--text-2);width:105px;flex-shrink:0;font-weight:500}
+.funnel-bar-bg{flex:1;background:var(--surface2);border-radius:5px;height:24px;overflow:hidden}
+.funnel-bar-fill{height:100%;border-radius:5px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;transition:width .5s}
+.funnel-bar-fill span{font-size:11px;font-weight:700;color:#fff}
+.funnel-drop{font-size:11px;font-weight:600;color:var(--red);width:42px;text-align:right;flex-shrink:0}
+.funnel-pct{font-size:11px;color:var(--text-3);width:34px;text-align:right;flex-shrink:0}
+
+/* ── STATE TABLE ── */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3);padding:7px 10px;background:var(--surface2);text-align:left;border-bottom:1px solid var(--border)}
+.tbl th:not(:first-child){text-align:right}
+.tbl td{padding:9px 10px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl td:not(:first-child){text-align:right}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--surface2)}
+.tbl tfoot td{font-weight:700;background:var(--surface2);border-top:2px solid var(--border)}
+.tbl tfoot td:not(:first-child){text-align:right}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.badge-g{background:var(--green-l);color:var(--green)}
+.badge-a{background:var(--amber-l);color:var(--amber)}
+.badge-r{background:var(--red-l);color:var(--red)}
+.badge-b{background:var(--blue-l);color:var(--blue)}
+.badge-p{background:var(--purple-l);color:var(--purple)}
+
+/* ── MINI PROGRESS ── */
+.mini-prog{display:flex;align-items:center;gap:6px}
+.mini-prog-bar{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;min-width:48px}
+.mini-prog-fill{height:100%;border-radius:3px}
+.mini-prog-val{font-size:11px;font-weight:700;width:30px;text-align:right}
+
+/* ── STACKED BAR (bill copy) ── */
+.bc-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.bc-row:last-child{border-bottom:none}
+.bc-state{font-size:12px;font-weight:500;width:96px;flex-shrink:0}
+.bc-bar{flex:1;height:22px;background:var(--surface2);border-radius:5px;overflow:hidden;display:flex}
+.bc-seg{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+.bc-total{font-size:11px;color:var(--text-3);width:50px;text-align:right;flex-shrink:0;font-weight:500}
+
+/* ── ATTENTION ITEMS ── */
+.attn-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--r-sm);border-left:3px solid;margin-bottom:8px}
+.attn-item:last-child{margin-bottom:0}
+.attn-title{font-size:12px;font-weight:600;margin-bottom:2px}
+.attn-sub{font-size:10px;opacity:.7}
+.attn-num{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+
+/* ── APPROVAL GRID ── */
+.approval-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-radius:var(--r-sm);overflow:hidden;margin-top:12px}
+.approval-mini>div{background:var(--surface2);padding:10px;text-align:center}
+.appr-n{font-size:20px;font-weight:800;letter-spacing:-.5px}
+.appr-l{font-size:10px;color:var(--text-3);margin-top:1px}
+
+/* ── DONUT ── */
+.donut-wrap{display:flex;align-items:center;gap:20px}
+.donut-svg-wrap{position:relative;flex-shrink:0}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut-center-n{font-size:22px;font-weight:800;letter-spacing:-1px}
+.donut-center-l{font-size:9px;color:var(--text-3);font-weight:500;margin-top:1px}
+.donut-legend-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);gap:8px}
+.donut-legend-row:last-child{border-bottom:none}
+.donut-key{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-2)}
+.donut-val{font-size:12px;font-weight:700}
+
+/* ── BILL PAYMENT SUMMARY DONUT (existing style) ── */
+.bps-wrap{display:flex;align-items:center;gap:24px}
+.bps-legend{flex:1;display:flex;flex-direction:column;gap:8px}
+.bps-row{display:flex;align-items:center;justify-content:space-between;font-size:11px}
+.bps-row-key{display:flex;align-items:center;gap:6px;color:var(--text-2)}
+.bps-row-val{font-weight:700;font-size:12px}
+
+/* ── TOP STATES TABLE ── */
+.top-state-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)}
+.top-state-row:last-child{border-bottom:none}
+.ts-name{font-size:12px;font-weight:500;width:100px;flex-shrink:0}
+.ts-bar{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin:0 10px}
+.ts-fill{height:100%;border-radius:3px}
+.ts-val{font-size:11px;font-weight:600;color:var(--text-2);width:80px;text-align:right;flex-shrink:0}
+
+/* ── ALERT ── */
+.alert{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:var(--r-sm);font-size:11px;margin-bottom:16px}
+.alert-warn{background:#FFFBEB;border:1px solid #FDE68A;color:#92400E}
+
+/* ── DIVIDER ── */
+.div{height:1px;background:var(--border);margin:14px 0}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:3px;background:var(--surface2);padding:3px;border-radius:var(--r-sm)}
+.tab{padding:5px 12px;border-radius:5px;font-size:11px;font-weight:500;cursor:pointer;color:var(--text-2);border:none;background:none;font-family:inherit;transition:all .15s}
+.tab.active{background:var(--surface);color:var(--text-1);box-shadow:0 1px 3px rgba(0,0,0,.08);font-weight:600}
+
+/* ── SECTION SEPARATOR ── */
+.section-sep{height:1px;background:var(--border);margin:28px 0 20px;position:relative}
+.section-sep-label{position:absolute;top:50%;left:0;transform:translateY(-50%);background:var(--bg);padding-right:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3)}
+
+/* ── DOWNLOAD BTN ── */
+.dl-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:500;color:var(--text-2);cursor:pointer;transition:all .15s}
+.dl-btn:hover{border-color:var(--purple);color:var(--purple)}
+
+@media(max-width:1000px){.g4{grid-template-columns:repeat(2,1fr)}.kpi-grid{grid-template-columns:repeat(2,1fr)}.g2x1,.g1x2{grid-template-columns:1fr}.g2{grid-template-columns:1fr}}
+@media(max-width:600px){.g3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="breadcrumb">
+    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    <span>/</span> Accounts Payable <span>/</span> <strong>Analytics</strong>
+  </div>
+  <div class="topbar-right">
+    <svg width="16" height="16" fill="none" stroke="var(--text-3)" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <svg width="16" height="16" fill="none" stroke="var(--text-3)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div>
+        <div class="user-name">John First Name</div>
+        <div class="user-role">Admin</div>
+      </div>
+      <div class="avatar">JF</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filterbar">
+  <div class="filter-chip active">All Branches <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></div>
+  <div class="filter-chip active">All States <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></div>
+  <div class="filter-chip active">Jan 2025 – Dec 2025 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></div>
+  <div class="filter-chip active">Last Year <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></div>
+  <div class="filter-chip active">Bill Category <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></div>
+  <div class="filter-chip active" style="color:var(--teal);border-color:var(--teal);background:var(--teal-l)">Electricity</div>
+  <button class="btn-apply">Apply Filter</button>
+</div>
+
+<div class="main">
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION A: OVERVIEW (existing)
+════════════════════════════════════════════════════ -->
+
+<!-- STAT STRIP: Branches + CAs -->
+<div class="stat-strip">
+  <div class="stat-wide">
+    <div class="stat-wide-icon" style="background:var(--purple-l)">
+      <svg width="18" height="18" fill="none" stroke="var(--purple)" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    <div>
+      <div class="stat-wide-lbl">Total Branches</div>
+      <div class="stat-wide-val">420</div>
+    </div>
+  </div>
+  <div class="stat-wide">
+    <div class="stat-wide-icon" style="background:var(--teal-l)">
+      <svg width="18" height="18" fill="none" stroke="var(--teal)" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div>
+      <div class="stat-wide-lbl">Total Consumer Accounts</div>
+      <div class="stat-wide-val" style="color:var(--teal)">402</div>
+    </div>
+  </div>
+</div>
+
+<!-- PENALTY & INCENTIVE + BILLS PAYMENT SUMMARY -->
+<div class="g2" style="margin-bottom:14px">
+
+  <!-- Penalty & Incentive -->
+  <div class="card">
+    <div class="chart-title" style="margin-bottom:12px">Penalty &amp; Incentive Overview</div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="kpi">
+        <div class="kpi-lbl">Power Factor Penalty</div>
+        <div class="kpi-val" style="color:var(--red)">₹ 45,978</div>
+        <div><span class="kpi-delta dn">▼ 07.04%</span> <span class="kpi-note">from last year</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-lbl">Power Factor Incentive</div>
+        <div class="kpi-val" style="color:var(--green)">₹ 26,653</div>
+        <div><span class="kpi-delta up">▲ 02.43%</span> <span class="kpi-note">from last year</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-lbl">Late Payment Penalty</div>
+        <div class="kpi-val" style="color:var(--red)">₹ 45,978.98</div>
+        <div><span class="kpi-delta dn">▼ 07.04%</span> <span class="kpi-note">from last year</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-lbl">Digital Payment Benefit</div>
+        <div class="kpi-val" style="color:var(--green)">₹ 34,987.25</div>
+        <div><span class="kpi-delta dn">▼ 01.86%</span> <span class="kpi-note">from last year</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bills Payment Summary -->
+  <div class="card">
+    <div class="chart-title" style="margin-bottom:12px">Bills Payment Summary</div>
+    <div class="bps-wrap">
+      <div class="donut-svg-wrap" style="width:120px;height:120px">
+        <svg width="120" height="120" viewBox="0 0 120 120" style="transform:rotate(-90deg)">
+          <circle cx="60" cy="60" r="46" fill="none" stroke="var(--border)" stroke-width="14"/>
+          <circle cx="60" cy="60" r="46" fill="none" stroke="var(--teal)" stroke-width="14"
+            stroke-dasharray="173.2 289.0" stroke-linecap="round"/>
+          <circle cx="60" cy="60" r="46" fill="none" stroke="#B0BAD4" stroke-width="14"
+            stroke-dasharray="115.8 289.0" stroke-dashoffset="-173.2" stroke-linecap="round"/>
+        </svg>
+        <div class="donut-center">
+          <div style="font-size:14px;font-weight:800;color:var(--text-1)">60%</div>
+          <div style="font-size:9px;color:var(--text-3)">paid</div>
+        </div>
+      </div>
+      <div class="bps-legend">
+        <div style="margin-bottom:8px">
+          <div style="font-size:10px;color:var(--text-3);font-weight:500">Early Payment Savings</div>
+          <div style="font-size:16px;font-weight:800;color:var(--green);letter-spacing:-.4px">₹ 90,034</div>
+        </div>
+        <div class="div" style="margin:8px 0 10px"></div>
+        <div class="bps-row">
+          <div class="bps-row-key"><span style="width:8px;height:8px;border-radius:2px;background:#B0BAD4;display:inline-block"></span>Total Bills</div>
+          <div class="bps-row-val">₹ 13,75,70,020.25</div>
+        </div>
+        <div class="bps-row" style="margin-top:6px">
+          <div class="bps-row-key"><span style="width:8px;height:8px;border-radius:2px;background:var(--teal);display:inline-block"></span>Total Paid Bills</div>
+          <div class="bps-row-val" style="color:var(--teal)">₹ 35,70,020.25</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     NEW SECTION: BILL VISIBILITY (integrated)
+════════════════════════════════════════════════════ -->
+<div class="section-sep"><span class="section-sep-label">Bill Generation &amp; Payment Visibility</span></div>
+
+<div class="alert alert-warn">
+  <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+  <span><strong>BBPS dependency:</strong> Bills cannot be paid until a BBPS fetch succeeds. Auto-fetch is enabled only for CAs with bill copy opted in. Approval flow is config-driven and excluded for skip-approval corporates.</span>
+</div>
+
+<!-- KPI strip: CA + Generation + Payment + Approval -->
+<div class="kpi-grid" style="margin-bottom:14px">
+  <div class="kpi">
+    <div class="kpi-lbl">Active Consumer Accounts</div>
+    <div class="kpi-val" style="color:var(--purple)">700</div>
+    <div style="margin-top:4px"><span class="delta warn">5 Active States</span></div>
+    <div class="kpi-note" style="margin-top:4px">MH · GJ · KA · WB · TN</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-lbl">Bills Generated</div>
+    <div class="kpi-val" style="color:var(--blue)">530</div>
+    <div style="margin-top:4px"><span class="delta up">75.7% of CAs</span></div>
+    <div class="kpi-note" style="margin-top:4px">170 not generated</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-lbl">Bills Paid</div>
+    <div class="kpi-val" style="color:var(--teal)">420</div>
+    <div style="margin-top:4px"><span class="delta up">79.2% of generated</span></div>
+    <div class="kpi-note" style="margin-top:4px">110 unpaid</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-lbl">Approval Pending</div>
+    <div class="kpi-val" style="color:var(--amber)">48</div>
+    <div style="margin-top:4px"><span class="delta warn">Config-driven</span></div>
+    <div class="kpi-note" style="margin-top:4px">Skip-approval corps excluded</div>
+  </div>
+</div>
+
+<!-- FUNNEL + DONUT side by side -->
+<div class="g2" style="margin-bottom:14px">
+
+  <!-- Funnel -->
+  <div class="chart-card">
+    <div class="chart-hdr">
+      <div>
+        <div class="chart-title">Bill Generation Funnel</div>
+        <div class="chart-subtitle">Active CAs → Generated → Paid · this month</div>
+      </div>
+      <div class="tabs">
+        <button class="tab active">All</button>
+        <button class="tab">State</button>
+        <button class="tab">Biller</button>
+      </div>
+    </div>
+
+    <!-- Flow nodes -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px">
+      <div style="flex:1;background:var(--purple-l);border:1.5px solid var(--purple);border-radius:var(--r-sm);padding:8px;text-align:center">
+        <div style="font-size:20px;font-weight:800;color:var(--purple);letter-spacing:-.5px">700</div>
+        <div style="font-size:10px;color:var(--text-3)">Active CAs</div>
+      </div>
+      <svg width="18" height="18" fill="none" stroke="var(--text-3)" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      <div style="flex:1;background:var(--blue-l);border:1.5px solid var(--blue);border-radius:var(--r-sm);padding:8px;text-align:center">
+        <div style="font-size:20px;font-weight:800;color:var(--blue);letter-spacing:-.5px">530</div>
+        <div style="font-size:10px;color:var(--text-3)">Generated</div>
+      </div>
+      <svg width="18" height="18" fill="none" stroke="var(--text-3)" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      <div style="flex:1;background:var(--teal-l);border:1.5px solid var(--teal);border-radius:var(--r-sm);padding:8px;text-align:center">
+        <div style="font-size:20px;font-weight:800;color:var(--teal);letter-spacing:-.5px">420</div>
+        <div style="font-size:10px;color:var(--text-3)">Paid</div>
+      </div>
+    </div>
+
+    <div class="funnel-row">
+      <div class="funnel-lbl" style="color:var(--text-1);font-weight:600">Active CAs</div>
+      <div class="funnel-bar-bg">
+        <div class="funnel-bar-fill" style="width:100%;background:var(--purple)"><span>700</span></div>
+      </div>
+      <div class="funnel-drop" style="color:transparent">—</div>
+      <div class="funnel-pct">100%</div>
+    </div>
+    <div class="funnel-row">
+      <div class="funnel-lbl" style="color:var(--text-1);font-weight:600">Bills Generated</div>
+      <div class="funnel-bar-bg">
+        <div class="funnel-bar-fill" style="width:75.7%;background:var(--blue)"><span>530</span></div>
+      </div>
+      <div class="funnel-drop">−170</div>
+      <div class="funnel-pct">75.7%</div>
+    </div>
+    <div class="funnel-row">
+      <div class="funnel-lbl" style="color:var(--text-1);font-weight:600">Bills Paid</div>
+      <div class="funnel-bar-bg">
+        <div class="funnel-bar-fill" style="width:60%;background:var(--teal)"><span>420</span></div>
+      </div>
+      <div class="funnel-drop">−110</div>
+      <div class="funnel-pct">60%</div>
+    </div>
+
+    <div class="div"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:0">
+      <div style="background:var(--red-l);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-size:16px;font-weight:800;color:var(--red)">170</div>
+        <div style="font-size:10px;color:var(--red);opacity:.8;margin-top:1px">Not Generated</div>
+      </div>
+      <div style="background:var(--amber-l);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-size:16px;font-weight:800;color:var(--amber)">110</div>
+        <div style="font-size:10px;color:var(--amber);opacity:.8;margin-top:1px">Unpaid</div>
+      </div>
+      <div style="background:var(--amber-l);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-size:16px;font-weight:800;color:var(--amber)">48</div>
+        <div style="font-size:10px;color:var(--amber);opacity:.8;margin-top:1px">Approval Hold</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CA Distribution Donut -->
+  <div class="chart-card">
+    <div class="chart-hdr">
+      <div>
+        <div class="chart-title">CA Distribution by Status</div>
+        <div class="chart-subtitle">Outer: Generation · Inner: Payment status</div>
+      </div>
+    </div>
+
+    <div class="donut-wrap" style="justify-content:center;padding:8px 0">
+      <div class="donut-svg-wrap" style="width:150px;height:150px">
+        <svg width="150" height="150" viewBox="0 0 150 150" style="transform:rotate(-90deg)">
+          <!-- Outer: Generated vs Not -->
+          <circle cx="75" cy="75" r="62" fill="none" stroke="var(--border)" stroke-width="16"/>
+          <circle cx="75" cy="75" r="62" fill="none" stroke="var(--blue)" stroke-width="16"
+            stroke-dasharray="295.3 389.6" stroke-linecap="round"/>
+          <!-- Inner: Paid vs Pending -->
+          <circle cx="75" cy="75" r="42" fill="none" stroke="var(--border)" stroke-width="14"/>
+          <circle cx="75" cy="75" r="42" fill="none" stroke="var(--teal)" stroke-width="14"
+            stroke-dasharray="158.3 263.9" stroke-linecap="round"/>
+          <circle cx="75" cy="75" r="42" fill="none" stroke="var(--amber)" stroke-width="14"
+            stroke-dasharray="43.6 263.9" stroke-dashoffset="-158.3" stroke-linecap="round"/>
+        </svg>
+        <div class="donut-center">
+          <div class="donut-center-n">700</div>
+          <div class="donut-center-l">Total CAs</div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:140px">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3);margin-bottom:5px">OUTER · GENERATION</div>
+        <div class="donut-legend-row">
+          <div class="donut-key"><span class="legend-dot" style="background:var(--blue)"></span>Generated</div>
+          <div class="donut-val" style="color:var(--blue)">530</div>
+        </div>
+        <div class="donut-legend-row">
+          <div class="donut-key"><span class="legend-dot" style="background:var(--border)"></span>Not Generated</div>
+          <div class="donut-val" style="color:var(--text-3)">170</div>
+        </div>
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3);margin:10px 0 5px">INNER · PAYMENT</div>
+        <div class="donut-legend-row">
+          <div class="donut-key"><span class="legend-dot" style="background:var(--teal)"></span>Paid</div>
+          <div class="donut-val" style="color:var(--teal)">420</div>
+        </div>
+        <div class="donut-legend-row">
+          <div class="donut-key"><span class="legend-dot" style="background:var(--amber)"></span>Pending</div>
+          <div class="donut-val" style="color:var(--amber)">110</div>
+        </div>
+
+        <div class="div" style="margin:10px 0 8px"></div>
+        <div style="font-size:10px;color:var(--text-3);font-weight:500;margin-bottom:5px">Bill Creation Source</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div class="mini-prog"><span style="font-size:10px;color:var(--text-2);width:74px">Auto Fetch</span><div class="mini-prog-bar"><div class="mini-prog-fill" style="width:52%;background:var(--blue)"></div></div><span class="mini-prog-val" style="color:var(--blue)">52%</span></div>
+          <div class="mini-prog"><span style="font-size:10px;color:var(--text-2);width:74px">Manual</span><div class="mini-prog-bar"><div class="mini-prog-fill" style="width:30%;background:var(--purple)"></div></div><span class="mini-prog-val" style="color:var(--purple)">30%</span></div>
+          <div class="mini-prog"><span style="font-size:10px;color:var(--text-2);width:74px">Upload</span><div class="mini-prog-bar"><div class="mini-prog-fill" style="width:18%;background:var(--amber)"></div></div><span class="mini-prog-val" style="color:var(--amber)">18%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- STATE TABLE -->
+<div class="chart-card" style="margin-bottom:14px">
+  <div class="chart-hdr">
+    <div>
+      <div class="chart-title">State-wise Bill Status</div>
+      <div class="chart-subtitle">Active CA states only · backend-driven · expandable to biller level</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="tabs">
+        <button class="tab active">State</button>
+        <button class="tab">Biller</button>
+      </div>
+      <button class="dl-btn">
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </button>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>State</th>
+          <th>Active CAs</th>
+          <th>Generated</th>
+          <th>Not Generated</th>
+          <th>Paid</th>
+          <th>Unpaid</th>
+          <th>Paid Rate</th>
+          <th>Bill Copy</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div style="font-weight:600">Maharashtra</div><div style="font-size:10px;color:var(--text-3)">3 billers</div></td>
+          <td style="font-weight:700">250</td>
+          <td><span style="color:var(--blue);font-weight:700">180</span> <span style="font-size:10px;color:var(--text-3)">(72%)</span></td>
+          <td><span style="color:var(--red)">70</span></td>
+          <td><span style="color:var(--teal);font-weight:700">145</span></td>
+          <td><span style="color:var(--amber)">35</span></td>
+          <td><div class="mini-prog"><div class="mini-prog-bar"><div class="mini-prog-fill" style="width:58%;background:var(--amber)"></div></div><span class="mini-prog-val" style="color:var(--amber)">58%</span></div></td>
+          <td><span class="badge badge-b">135 opted</span></td>
+          <td><span class="badge badge-a">Moderate</span></td>
+        </tr>
+        <tr>
+          <td><div style="font-weight:600">Gujarat</div><div style="font-size:10px;color:var(--text-3)">2 billers</div></td>
+          <td style="font-weight:700">180</td>
+          <td><span style="color:var(--blue);font-weight:700">140</span> <span style="font-size:10px;color:var(--text-3)">(77.8%)</span></td>
+          <td><span style="color:var(--red)">40</span></td>
+          <td><span style="color:var(--teal);font-weight:700">110</span></td>
+          <td><span style="color:var(--amber)">30</span></td>
+          <td><div class="mini-prog"><div class="mini-prog-bar"><div class="mini-prog-fill" style="width:61%;background:var(--teal)"></div></div><span class="mini-prog-val" style="color:var(--teal)">61%</span></div></td>
+          <td><span class="badge badge-b">98 opted</span></td>
+          <td><span class="badge badge-g">On Track</span></td>
+        </tr>
+        <tr>
+          <td><div style="font-weight:600">Karnataka</div><div style="font-size:10px;color:var(--text-3)">2 billers</div></td>
+          <td style="font-weight:700">150</td>
+          <td><span style="color:var(--blue);font-weight:700">115</span> <span style="font-size:10px;color:var(--text-3)">(76.7%)</span></td>
+          <td><span style="color:var(--red)">35</span></td>
+          <td><span style="color:var(--teal);font-weight:700">94</span></td>
+          <td><span style="color:var(--amber)">21</span></td>
+          <td><div class="mini-prog"><div class="mini-prog-bar"><div class="mini-prog-fill" style="width:63%;background:var(--teal)"></div></div><span class="mini-prog-val" style="color:var(--teal)">63%</span></div></td>
+          <td><span class="badge badge-b">90 opted</span></td>
+          <td><span class="badge badge-g">On Track</span></td>
+        </tr>
+        <tr>
+          <td><div style="font-weight:600">West Bengal</div><div style="font-size:10px;color:var(--text-3)">1 biller</div></td>
+          <td style="font-weight:700">72</td>
+          <td><span style="color:var(--blue);font-weight:700">54</span> <span style="font-size:10px;color:var(--text-3)">(75%)</span></td>
+          <td><span style="color:var(--red)">18</span></td>
+          <td><span style="color:var(--teal);font-weight:700">40</span></td>
+          <td><span style="color:var(--amber)">14</span></td>
+          <td><div class="mini-prog"><div class="mini-prog-bar"><div class="mini-prog-fill" style="width:55%;background:var(--amber)"></div></div><span class="mini-prog-val" style="color:var(--amber)">55%</span></div></td>
+          <td><span class="badge badge-b">72 opted</span></td>
+          <td><span class="badge badge-a">Moderate</span></td>
+        </tr>
+        <tr>
+          <td><div style="font-weight:600">Tamil Nadu</div><div style="font-size:10px;color:var(--text-3)">2 billers</div></td>
+          <td style="font-weight:700">48</td>
+          <td><span style="color:var(--blue);font-weight:700">41</span> <span style="font-size:10px;color:var(--text-3)">(85.4%)</span></td>
+          <td><span style="color:var(--red)">7</span></td>
+          <td><span style="color:var(--teal);font-weight:700">31</span></td>
+          <td><span style="color:var(--amber)">10</span></td>
+          <td><div class="mini-prog"><div class="mini-prog-bar"><div class="mini-prog-fill" style="width:64%;background:var(--teal)"></div></div><span class="mini-prog-val" style="color:var(--teal)">64%</span></div></td>
+          <td><span class="badge badge-b">55 opted</span></td>
+          <td><span class="badge badge-g">On Track</span></td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>Total · 5 States</td>
+          <td>700</td>
+          <td style="color:var(--blue)">530</td>
+          <td style="color:var(--red)">170</td>
+          <td style="color:var(--teal)">420</td>
+          <td style="color:var(--amber)">110</td>
+          <td><div class="mini-prog"><div class="mini-prog-bar"><div class="mini-prog-fill" style="width:60%;background:var(--teal)"></div></div><span class="mini-prog-val" style="color:var(--teal)">60%</span></div></td>
+          <td>450 opted</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+<!-- BILL COPY STATUS + APPROVAL + ATTENTION -->
+<div class="g3" style="margin-bottom:14px">
+
+  <!-- Bill Copy Status -->
+  <div class="chart-card" style="grid-column:span 2">
+    <div class="chart-hdr">
+      <div>
+        <div class="chart-title">Digital Bill Copy Status</div>
+        <div class="chart-subtitle">CAs opted for bill copy · <code style="font-size:10px;background:var(--surface2);padding:1px 4px;border-radius:3px">bill_copy_enabled</code> flag driven</div>
+      </div>
+      <span class="badge badge-p">450 Opted</span>
+    </div>
+
+    <!-- Summary bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;gap:12px">
+        <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span class="legend-dot" style="background:var(--teal)"></span><strong style="color:var(--teal)">354</strong>&nbsp;Received</span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span class="legend-dot" style="background:var(--amber)"></span><strong style="color:var(--amber)">62</strong>&nbsp;Pending</span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span class="legend-dot" style="background:var(--red)"></span><strong style="color:var(--red)">34</strong>&nbsp;Failed</span>
+      </div>
+      <span class="badge badge-g">78.7% received</span>
+    </div>
+    <!-- Master bar -->
+    <div style="height:7px;border-radius:5px;overflow:hidden;display:flex;gap:2px;margin-bottom:14px">
+      <div style="width:78.7%;background:var(--teal);border-radius:3px"></div>
+      <div style="width:13.8%;background:var(--amber);border-radius:3px"></div>
+      <div style="width:7.5%;background:var(--red);border-radius:3px"></div>
+    </div>
+
+    <div class="bc-row">
+      <div class="bc-state">Maharashtra</div>
+      <div class="bc-bar">
+        <div class="bc-seg" style="width:80%;background:var(--teal)">108</div>
+        <div class="bc-seg" style="width:13.3%;background:var(--amber)">18</div>
+        <div class="bc-seg" style="width:6.7%;background:var(--red)">9</div>
+      </div>
+      <div class="bc-total">135 CAs</div>
+    </div>
+    <div class="bc-row">
+      <div class="bc-state">Gujarat</div>
+      <div class="bc-bar">
+        <div class="bc-seg" style="width:83.7%;background:var(--teal)">82</div>
+        <div class="bc-seg" style="width:10.2%;background:var(--amber)">10</div>
+        <div class="bc-seg" style="width:6.1%;background:var(--red)">6</div>
+      </div>
+      <div class="bc-total">98 CAs</div>
+    </div>
+    <div class="bc-row">
+      <div class="bc-state">Karnataka</div>
+      <div class="bc-bar">
+        <div class="bc-seg" style="width:77.8%;background:var(--teal)">70</div>
+        <div class="bc-seg" style="width:14.4%;background:var(--amber)">13</div>
+        <div class="bc-seg" style="width:7.8%;background:var(--red)">7</div>
+      </div>
+      <div class="bc-total">90 CAs</div>
+    </div>
+    <div class="bc-row">
+      <div class="bc-state">West Bengal</div>
+      <div class="bc-bar">
+        <div class="bc-seg" style="width:75%;background:var(--teal)">54</div>
+        <div class="bc-seg" style="width:16.7%;background:var(--amber)">12</div>
+        <div class="bc-seg" style="width:8.3%;background:var(--red)">6</div>
+      </div>
+      <div class="bc-total">72 CAs</div>
+    </div>
+    <div class="bc-row">
+      <div class="bc-state">Tamil Nadu</div>
+      <div class="bc-bar">
+        <div class="bc-seg" style="width:72.7%;background:var(--teal)">40</div>
+        <div class="bc-seg" style="width:16.4%;background:var(--amber)">9</div>
+        <div class="bc-seg" style="width:10.9%;background:var(--red)">6</div>
+      </div>
+      <div class="bc-total">55 CAs</div>
+    </div>
+  </div>
+
+  <!-- Approval + Attention -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+
+    <div class="chart-card">
+      <div class="chart-title" style="margin-bottom:10px">Approval Queue</div>
+      <div style="font-size:10px;color:var(--text-3);margin-bottom:10px">Config-driven · skip-approval corps not counted</div>
+      <div class="approval-mini">
+        <div><div class="appr-n" style="color:var(--amber)">48</div><div class="appr-l">Pending</div></div>
+        <div><div class="appr-n" style="color:var(--teal)">312</div><div class="appr-l">Approved</div></div>
+        <div><div class="appr-n" style="color:var(--red)">12</div><div class="appr-l">Rejected</div></div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title" style="margin-bottom:10px">Action Required</div>
+      <div class="attn-item" style="background:var(--red-l);border-color:var(--red)">
+        <div><div class="attn-title" style="color:var(--red)">Bill Copy Failed</div><div class="attn-sub" style="color:var(--red)">BBPS fetch failed · payment blocked</div></div>
+        <div class="attn-num" style="color:var(--red)">34</div>
+      </div>
+      <div class="attn-item" style="background:var(--amber-l);border-color:var(--amber)">
+        <div><div class="attn-title" style="color:var(--amber)">Not Generated</div><div class="attn-sub" style="color:var(--amber)">Active CAs · no bill this month</div></div>
+        <div class="attn-num" style="color:var(--amber)">170</div>
+      </div>
+      <div class="attn-item" style="background:var(--blue-l);border-color:var(--blue);margin-bottom:0">
+        <div><div class="attn-title" style="color:var(--blue)">Copy Pending</div><div class="attn-sub" style="color:var(--blue)">Auto-fetch in progress</div></div>
+        <div class="attn-num" style="color:var(--blue)">62</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION B: EXISTING CHARTS (unchanged)
+════════════════════════════════════════════════════ -->
+<div class="section-sep"><span class="section-sep-label">State-wise Successful Bill Payments</span></div>
+
+<div class="chart-card" style="margin-bottom:14px">
+  <div class="chart-hdr">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:10px;color:var(--text-3)">● Total Paid Bill Amount</div>
+          <div style="font-size:17px;font-weight:800;color:var(--purple);letter-spacing:-.4px">₹ 13,75,70,020.25</div>
+          <div style="margin-top:3px"><span class="delta up">▲ 13.41%</span><span style="font-size:10px;color:var(--text-3);margin-left:5px">from last 9 months</span></div>
+        </div>
+        <div style="margin-left:20px">
+          <div style="font-size:10px;color:var(--text-3)">● Total Paid Bills</div>
+          <div style="font-size:17px;font-weight:800;color:var(--teal);letter-spacing:-.4px">296</div>
+          <div style="margin-top:3px"><span class="delta up">▲ 09.40%</span><span style="font-size:10px;color:var(--text-3);margin-left:5px">from last 9 months</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="chart-wrap" style="height:200px"><canvas id="stateBarChart"></canvas></div>
+  <div class="legend" style="margin-top:10px">
+    <div class="legend-item"><span class="legend-dot" style="background:#6C5CE7"></span>Maharashtra</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#00B894"></span>Gujarat</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#FDCB6E"></span>Karnataka</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#E17055"></span>West Bengal</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#74B9FF"></span>Tamil Nadu</div>
+  </div>
+</div>
+
+<div class="section-sep"><span class="section-sep-label">Unit Consumption vs Bill Amount</span></div>
+
+<div class="chart-card" style="margin-bottom:14px">
+  <div class="chart-hdr">
+    <div>
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:10px;color:var(--text-3)">● Total Bill Amount</div>
+          <div style="font-size:17px;font-weight:800;color:var(--purple);letter-spacing:-.4px">₹ 13,75,70,020.25</div>
+          <div style="margin-top:3px"><span class="delta up">▲ 13.41%</span><span style="font-size:10px;color:var(--text-3);margin-left:5px">from last year</span></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-3)">● Total Unit Consumption</div>
+          <div style="font-size:17px;font-weight:800;color:var(--teal);letter-spacing:-.4px">45,09,387</div>
+          <div style="margin-top:3px"><span class="delta up">▲ 12.41%</span><span style="font-size:10px;color:var(--text-3);margin-left:5px">from last year</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="chart-wrap" style="height:200px"><canvas id="unitBillChart"></canvas></div>
+  <div class="legend">
+    <div class="legend-item"><span class="legend-line" style="background:var(--purple)"></span>Bill Amount (₹)</div>
+    <div class="legend-item"><span class="legend-line" style="background:var(--teal)"></span>Unit Consumption</div>
+  </div>
+</div>
+
+<div class="section-sep"><span class="section-sep-label">Excess Demand Charges vs Maximum Demand Units</span></div>
+
+<div class="chart-card" style="margin-bottom:14px">
+  <div class="chart-hdr">
+    <div>
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:10px;color:var(--text-3)">● Excess Demand Charges</div>
+          <div style="font-size:17px;font-weight:800;color:var(--purple);letter-spacing:-.4px">₹ 13,75,70,020.25</div>
+          <div style="margin-top:3px"><span class="delta up">▲ 12.41%</span><span style="font-size:10px;color:var(--text-3);margin-left:5px">from last year</span></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-3)">● Maximum Demand Unit</div>
+          <div style="font-size:17px;font-weight:800;color:var(--teal);letter-spacing:-.4px">45,09,387</div>
+          <div style="margin-top:3px"><span class="delta up">▲ 12.41%</span><span style="font-size:10px;color:var(--text-3);margin-left:5px">from last year</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="chart-wrap" style="height:200px"><canvas id="demandChart"></canvas></div>
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background:#6C5CE7"></span>Excess Demand Charges</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#00B894"></span>Maximum Demand Unit</div>
+  </div>
+</div>
+
+<!-- BOTTOM TABLES: Top Consuming + Penalty -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;margin-top:24px">
+  <div style="font-size:12px;color:var(--text-2)">Showing Results: <strong>Top 9</strong> ▾</div>
+  <button class="dl-btn"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Report</button>
+</div>
+
+<div class="g2" style="margin-bottom:14px">
+
+  <!-- Top Consuming States -->
+  <div class="chart-card">
+    <div class="chart-hdr">
+      <div>
+        <div class="chart-title">Top Consuming States</div>
+        <div style="display:flex;gap:10px;margin-top:5px">
+          <div style="font-size:10px;background:var(--purple-l);color:var(--purple);padding:2px 8px;border-radius:10px;font-weight:600;cursor:pointer">● Units</div>
+          <div style="font-size:10px;color:var(--text-3);cursor:pointer">○ Excess Demand</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text-3)">Total Consumption</div>
+        <div style="font-size:16px;font-weight:800;color:var(--purple)">45,09,387 <span class="delta up" style="font-size:10px">▲12.41%</span></div>
+      </div>
+    </div>
+    <div id="topStatesRows">
+      <div class="top-state-row"><div class="ts-name">Maharashtra</div><div class="ts-bar"><div class="ts-fill" style="width:90%;background:var(--purple)"></div></div><div class="ts-val">14,34,078 Units</div></div>
+      <div class="top-state-row"><div class="ts-name">Haryana</div><div class="ts-bar"><div class="ts-fill" style="width:78%;background:var(--purple)"></div></div><div class="ts-val">14,34,015 Units</div></div>
+      <div class="top-state-row"><div class="ts-name">Gujarat</div><div class="ts-bar"><div class="ts-fill" style="width:70%;background:var(--purple)"></div></div><div class="ts-val">14,34,015 Units</div></div>
+      <div class="top-state-row"><div class="ts-name">Uttar Pradesh</div><div class="ts-bar"><div class="ts-fill" style="width:64%;background:var(--purple)"></div></div><div class="ts-val">14,34,015 Units</div></div>
+      <div class="top-state-row"><div class="ts-name">Rajasthan</div><div class="ts-bar"><div class="ts-fill" style="width:58%;background:var(--purple)"></div></div><div class="ts-val">14,34,015 Units</div></div>
+    </div>
+  </div>
+
+  <!-- Penalty vs Incentive by State -->
+  <div class="chart-card">
+    <div class="chart-hdr">
+      <div>
+        <div class="chart-title">Penalty vs Incentive State Analysis</div>
+        <div style="display:flex;gap:10px;margin-top:5px">
+          <div style="font-size:10px;background:var(--red-l);color:var(--red);padding:2px 8px;border-radius:10px;font-weight:600;cursor:pointer">● Incentive</div>
+          <div style="font-size:10px;color:var(--text-3);cursor:pointer">○ Penalty</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text-3)">Total Incentive Amount</div>
+        <div style="font-size:16px;font-weight:800;color:var(--red)">₹ 9,11,00,000 <span class="delta up" style="font-size:10px">▲13.41%</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="top-state-row"><div class="ts-name">Maharashtra</div><div class="ts-bar"><div class="ts-fill" style="width:90%;background:var(--red)"></div></div><div class="ts-val">14,34,015 Units</div></div>
+      <div class="top-state-row"><div class="ts-name">Haryana</div><div class="ts-bar"><div class="ts-fill" style="width:80%;background:var(--red)"></div></div><div class="ts-val">14,34,015 Units</div></div>
+      <div class="top-state-row"><div class="ts-name">Gujarat</div><div class="ts-bar"><div class="ts-fill" style="width:72%;background:var(--red)"></div></div><div class="ts-val">14,34,015 Units</div></div>
+      <div class="top-state-row"><div class="ts-name">Uttar Pradesh</div><div class="ts-bar"><div class="ts-fill" style="width:65%;background:var(--red)"></div></div><div class="ts-val">14,34,015 Units</div></div>
+      <div class="top-state-row"><div class="ts-name">Rajasthan</div><div class="ts-bar"><div class="ts-fill" style="width:58%;background:var(--red)"></div></div><div class="ts-val">14,34,015 Units</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Late Payment + Bill Amount Distribution -->
+<div class="g2" style="margin-bottom:14px">
+
+  <div class="chart-card">
+    <div class="chart-hdr">
+      <div>
+        <div class="chart-title">Late Payment Penalty</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:3px">Total Count And Bills</div>
+        <div style="font-size:16px;font-weight:800;color:var(--purple)">59 | ₹ 21,564.12</div>
+      </div>
+    </div>
+    <div>
+      <div class="top-state-row"><div class="ts-name">Maharashtra</div><div class="ts-bar"><div class="ts-fill" style="width:100%;background:var(--purple)"></div></div><div class="ts-val">220 Bills</div></div>
+      <div class="top-state-row"><div class="ts-name">Gujarat</div><div class="ts-bar"><div class="ts-fill" style="width:86%;background:var(--purple)"></div></div><div class="ts-val">200 Bills</div></div>
+      <div class="top-state-row"><div class="ts-name">Gujarat</div><div class="ts-bar"><div class="ts-fill" style="width:76%;background:var(--purple)"></div></div><div class="ts-val">350 Bills</div></div>
+      <div class="top-state-row"><div class="ts-name">Uttar Pradesh</div><div class="ts-bar"><div class="ts-fill" style="width:66%;background:var(--purple)"></div></div><div class="ts-val">220 Bills</div></div>
+      <div class="top-state-row"><div class="ts-name">Rajasthan</div><div class="ts-bar"><div class="ts-fill" style="width:56%;background:var(--purple)"></div></div><div class="ts-val">220 Bills</div></div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-hdr" style="margin-bottom:10px">
+      <div>
+        <div class="chart-title">Bill Amount Distribution <span style="font-size:10px;background:var(--amber-l);color:var(--amber);padding:1px 6px;border-radius:8px;font-weight:500;margin-left:4px">Admin Only</span></div>
+      </div>
+    </div>
+    <div class="legend" style="margin-bottom:8px;gap:8px">
+      <div class="legend-item"><span class="legend-dot" style="background:#EF4444"></span>Negative</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#6C5CE7"></span>0–20k</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#FDCB6E"></span>20k–40k</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#00B894"></span>40k–60k</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#74B9FF"></span>60–80k</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#E17055"></span>80k+</div>
+    </div>
+    <div class="chart-wrap" style="height:160px"><canvas id="distChart"></canvas></div>
+  </div>
+
+</div>
+
+</div><!-- /main -->
+
+<script>
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const shortM = ['Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+
+const chartDefaults = {
+  font: { family: "'Plus Jakarta Sans', sans-serif", size: 10 },
+  color: '#9CA3B8'
+};
+Chart.defaults.font = chartDefaults.font;
+Chart.defaults.color = chartDefaults.color;
+
+// State-wise Successful Bill Payments (stacked bar)
+new Chart(document.getElementById('stateBarChart'), {
+  type: 'bar',
+  data: {
+    labels: shortM,
+    datasets: [
+      { label: 'Maharashtra', data: [1200,980,1100,1050,1300,1150,1000,1250,1180,1320,1400,1100], backgroundColor: '#6C5CE7', stack: 'a' },
+      { label: 'Gujarat', data: [800,720,850,780,900,820,750,880,810,950,1020,900], backgroundColor: '#00B894', stack: 'a' },
+      { label: 'Karnataka', data: [600,550,620,590,680,610,560,640,590,700,750,620], backgroundColor: '#FDCB6E', stack: 'a' },
+      { label: 'West Bengal', data: [400,380,420,400,450,420,390,440,410,480,510,430], backgroundColor: '#E17055', stack: 'a' },
+      { label: 'Tamil Nadu', data: [300,270,310,290,340,310,280,320,300,360,390,330], backgroundColor: '#74B9FF', stack: 'a' },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { mode: 'index' } },
+    scales: {
+      x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 } } },
+      y: { grid: { color: '#F0F2F8' }, border: { display: false, dash: [3,3] }, ticks: { font: { size: 9 } } }
+    }
+  }
+});
+
+// Unit Consumption vs Bill Amount (dual axis)
+new Chart(document.getElementById('unitBillChart'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [
+      { type: 'bar', label: 'Bill Amount', data: [900,780,850,920,1100,1050,980,1150,1080,1200,1300,1100], backgroundColor: 'rgba(108,92,231,0.25)', borderColor: '#6C5CE7', borderWidth: 1.5, yAxisID: 'y', borderRadius: 3 },
+      { type: 'line', label: 'Unit Consumption', data: [45,38,42,48,55,52,48,58,53,62,68,58], borderColor: '#00B894', backgroundColor: 'rgba(0,184,148,0.08)', tension: 0.4, pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: '#00B894', yAxisID: 'y2', borderWidth: 2, fill: true }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 } } },
+      y: { position: 'left', grid: { color: '#F0F2F8' }, border: { display: false }, ticks: { font: { size: 9 } } },
+      y2: { position: 'right', grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 } } }
+    }
+  }
+});
+
+// Excess Demand vs Max Demand (dual line)
+new Chart(document.getElementById('demandChart'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Excess Demand Charges', data: [30,45,28,52,38,60,42,35,50,28,45,32], borderColor: '#6C5CE7', backgroundColor: 'rgba(108,92,231,0.06)', tension: 0.4, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: '#6C5CE7', fill: true, borderWidth: 2 },
+      { label: 'Max Demand Unit', data: [40,35,50,30,55,25,48,42,38,52,30,45], borderColor: '#00B894', backgroundColor: 'rgba(0,184,148,0.06)', tension: 0.4, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: '#00B894', fill: true, borderWidth: 2 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 } } },
+      y: { grid: { color: '#F0F2F8' }, border: { display: false }, ticks: { font: { size: 9 } } }
+    }
+  }
+});
+
+// Bill Amount Distribution (grouped bar)
+new Chart(document.getElementById('distChart'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Negative', data: [2,3,1,2,1,3,2,1,2,1,2,3], backgroundColor: '#EF4444' },
+      { label: '0–20k', data: [8,6,9,7,10,8,7,9,8,11,9,7], backgroundColor: '#6C5CE7' },
+      { label: '20k–40k', data: [12,10,13,11,14,12,11,13,12,15,13,11], backgroundColor: '#FDCB6E' },
+      { label: '40k–60k', data: [6,5,7,6,8,6,5,7,6,9,7,6], backgroundColor: '#00B894' },
+      { label: '60–80k', data: [4,3,5,4,5,4,3,5,4,6,5,4], backgroundColor: '#74B9FF' },
+      { label: '80k+', data: [2,2,3,2,3,2,2,3,2,4,3,2], backgroundColor: '#E17055' },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 } } },
+      y: { grid: { color: '#F0F2F8' }, border: { display: false }, ticks: { font: { size: 9 } } }
+    }
+  }
+});
+</script>
+</body>
+</html>
